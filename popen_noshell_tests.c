@@ -23,9 +23,9 @@
 #include <string.h>
 #include <alloca.h>
 
-/*************************************************
- * popen_noshell unit test and use-case examples *
- *************************************************
+/***************************************************
+ * popen_noshell C unit test and use-case examples *
+ ***************************************************
  *
  * Compile and test via:
  * 	gcc -Wall popen_noshell.c popen_noshell_tests.c -o popen_noshell_tests && ./popen_noshell_tests
