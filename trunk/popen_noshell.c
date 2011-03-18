@@ -40,6 +40,18 @@
 
 //#define POPEN_NOSHELL_DEBUG
 
+// because of C++, we can't call err() or errx() within the child, because they call exit(), and _exit() is what must be called; so we wrap
+#define _ERR(EVAL, FMT, ...) \
+	{ \
+		warn(FMT, ##__VA_ARGS__); \
+		_exit(EVAL); \
+	}
+#define _ERRX(EVAL, FMT, ...) \
+	{ \
+		warnx(FMT, ##__VA_ARGS__); \
+		_exit(EVAL); \
+	}
+
 int _popen_noshell_fork_mode = POPEN_NOSHELL_MODE_CLONE;
 
 void popen_noshell_set_fork_mode(int mode) { // see "popen_noshell.h" POPEN_NOSHELL_MODE_* constants
@@ -112,7 +124,7 @@ void _popen_noshell_child_process(
 	int pipefd[2] = {pipefd_0, pipefd_1};
 
 	if (ignore_stderr) { /* ignore STDERR completely? */
-		if (popen_noshell_reopen_fd_to_dev_null(STDERR_FILENO) != 0) err(255, "popen_noshell_reopen_fd_to_dev_null(%d)", STDERR_FILENO);
+		if (popen_noshell_reopen_fd_to_dev_null(STDERR_FILENO) != 0) _ERR(255, "popen_noshell_reopen_fd_to_dev_null(%d)", STDERR_FILENO);
 	}
 
 	if (read_pipe) {
@@ -125,10 +137,10 @@ void _popen_noshell_child_process(
 		dupped_child_fd = STDIN_FILENO;		/* dup the other pipe end to STDIN */
 	}
 	if (popen_noshell_reopen_fd_to_dev_null(closed_child_fd) != 0) {
-		err(255, "popen_noshell_reopen_fd_to_dev_null(%d)", closed_child_fd);
+		_ERR(255, "popen_noshell_reopen_fd_to_dev_null(%d)", closed_child_fd);
 	}
 	if (_popen_noshell_close_and_dup(pipefd, closed_pipe_fd, dupped_child_fd) != 0) {
-		err(255, "_popen_noshell_close_and_dup(%d ,%d)", closed_pipe_fd, dupped_child_fd);
+		_ERR(255, "_popen_noshell_close_and_dup(%d ,%d)", closed_pipe_fd, dupped_child_fd);
 	}
 
 	execvp(file, (char * const *)argv);
@@ -145,13 +157,13 @@ void _popen_noshell_child_process(
 	}
 #endif
 
-	if (fflush(stdout) != 0) err(255, "fflush(stdout)");
-	if (fflush(stderr) != 0) err(255, "fflush(stderr)");
+	if (fflush(stdout) != 0) _ERR(255, "fflush(stdout)");
+	if (fflush(stderr) != 0) _ERR(255, "fflush(stderr)");
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
 	close(STDERR_FILENO);
 
-	exit(255);
+	_exit(255); // call _exit() and not exit(), or you'll have troubles in C++
 }
 
 int popen_noshell_child_process_by_clone(void *raw_arg) {
@@ -246,7 +258,7 @@ pid_t popen_noshell_vmfork(int (*fn)(void *), void *arg, void **memory_to_free_o
 		if (pid == 0) { // child
 #ifdef POPEN_NOSHELL_VALGRIND_DEBUG
 			free(stack); // this is a copy because of the fork(), we are not using it at all
-			exit(fn(arg)); // if we used fork() because of Valgrind, invoke the child function manually
+			_exit(fn(arg)); // if we used fork() because of Valgrind, invoke the child function manually; always use _exit()
 #endif
 			errx(EXIT_FAILURE, "This must never happen");
 		} // child life ends here, for sure
