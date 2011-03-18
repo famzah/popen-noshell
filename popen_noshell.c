@@ -175,7 +175,7 @@ char ** popen_noshell_copy_argv(const char * const *argv_orig) {
 		++argv;
 	}
 
-	argv_new = malloc(sizeof(char *) * size);
+	argv_new = (char **)malloc(sizeof(char *) * size);
 	if (!argv_new) return NULL;
 
 	argv = (char **)argv_orig;
@@ -220,7 +220,8 @@ pid_t popen_noshell_vmfork(int (*fn)(void *), void *arg, void **memory_to_free_o
 		 * On all supported Linux platforms the stack grows down, except for HP-PARISC.
 		 * You can grep the kernel source for "STACK_GROWSUP", in order to get this information.
 		 */
-		stack_aligned = stack + POPEN_NOSHELL_STACK_SIZE; // stack grows down, set pointer at the end of the block
+		// stack grows down, set pointer at the end of the block
+		stack_aligned = (void *) ((char * /*byte*/)stack + POPEN_NOSHELL_STACK_SIZE/*bytes*/);
 
 		/*
 		 * On all supported platforms by GNU libc, the stack is aligned to 16 bytes, except for the SuperH platform which is aligned to 8 bytes.
@@ -306,7 +307,7 @@ FILE *popen_noshell(const char *file, const char * const *argv, const char *type
 
 		struct popen_noshell_clone_arg *arg = NULL;
 
-		arg = malloc(sizeof(struct popen_noshell_clone_arg));
+		arg = (struct popen_noshell_clone_arg*) malloc(sizeof(struct popen_noshell_clone_arg));
 		if (!arg) return NULL;
 
 		/* Copy memory structures, so that nobody can free() our memory while we use it in the child! */
@@ -349,7 +350,7 @@ FILE *popen_noshell(const char *file, const char * const *argv, const char *type
 
 int popen_noshell_add_ptr_to_argv(char ***argv, int *count, char *start) {
 		*count += 1;
-		*argv = realloc(*argv, *count * sizeof(char **));
+		*argv = (char **) realloc(*argv, *count * sizeof(char **));
 		if (*argv == NULL) {
 			return -1;
 		}
