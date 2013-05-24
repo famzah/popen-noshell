@@ -130,15 +130,22 @@ int main() {
 	int try_read;
 
 	/*
-	 * Tune these options as you need.
+	 * Demonstrate all possible options.
 	 */
-	try_compat = 0;	/* or the more secure, but incompatible version of popen_noshell */
-	try_read = 1;	/* or write */
+	for (try_compat = 0; try_compat <= 1; ++try_compat) {
+		for (try_read = 0; try_read <= 1; ++try_read) {
+			printf(
+				"\n** Test: compat=%d, operation='%s'. Press any key to start the test...\n",
+				try_compat, try_read ? "read" : "write"
+			);
+			getchar();
 
-	if (try_read) {
-		example_reading(try_compat);
-	} else {
-		example_writing(try_compat);
+			if (try_read) {
+				example_reading(try_compat);
+			} else {
+				example_writing(try_compat);
+			}
+		}
 	}
 
 	satisfy_open_FDs_leak_detection_and_exit();
