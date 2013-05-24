@@ -16,6 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses>.
  */
 
+// _GNU_SOURCE must be defined as early as possible
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <sched.h>
+
 #include "popen_noshell.h"
 #include <errno.h>
 #include <unistd.h>
@@ -28,11 +34,6 @@
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <inttypes.h>
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-#include <sched.h>
 
 /*
  * Wish-list:
