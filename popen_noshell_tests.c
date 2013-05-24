@@ -188,11 +188,25 @@ void do_unit_tests() {
 	assert_int(11, test_num - 1, "Test count");
 }
 
+void issue_4_double_free() { // make sure we don't re-introduce this bug
+	FILE *fp;
+	struct popen_noshell_pass_to_pclose pclose_arg;
+
+	fp = popen_noshell_compat("Some b&d command", "r", &pclose_arg);
+	if (fp) {
+		errx(EXIT_FAILURE,
+			"issue_4_double_free(): popen_noshell_compat() must have returned NULL."
+		);
+	}
+}
+
 void proceed_to_unit_tests_and_exit() {
 	popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_CLONE); /* the default one */
 	do_unit_tests();
 	popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_FORK);
 	do_unit_tests();
+
+	issue_4_double_free();
 
 	printf("Tests passed OK.\n");
 
