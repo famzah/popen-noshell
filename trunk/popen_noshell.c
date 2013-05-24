@@ -387,7 +387,7 @@ int _popen_noshell_add_token(char ***argv, int *count, char *start, char *comman
 	return 0;
 }
 
-#define _popen_noshell_split_return_NULL { if (argv != NULL) free(argv); if (command != NULL) free(command); return NULL; }
+#define _popen_noshell_split_return_NULL { free(argv); return NULL; }
 char ** popen_noshell_split_command_to_argv(const char *command_original, char **free_this_buf) {
 	char *command;
 	size_t i, len;
@@ -404,9 +404,8 @@ char ** popen_noshell_split_command_to_argv(const char *command_original, char *
 #endif
 
 	command = (char *)calloc(strlen(command_original) + 1, sizeof(char));
-	if (!command) _popen_noshell_split_return_NULL;
-
 	*free_this_buf = command;
+	if (!command) _popen_noshell_split_return_NULL;
 
 	len = strlen(command_original); // get the original length
 	j = 0;
@@ -513,7 +512,7 @@ FILE *popen_noshell_compat(const char *command, const char *type, struct popen_n
 
 	argv = popen_noshell_split_command_to_argv(command, &to_free);
 	if (!argv) {
-		if (to_free) free(to_free);
+		free(to_free); // free(NULL) is valid too
 		return NULL;
 	}
 
