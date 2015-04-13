@@ -70,6 +70,8 @@ int popen_noshell_reopen_fd_to_dev_null(int fd) {
 	if (close(fd) != 0) {
 		return -1;
 	}
+	// man dup2(): The two descriptors do not share file descriptor flags.
+	// The close-on-exec flag (FD_CLOEXEC) for the duplicate descriptor is off.
 	if (dup2(dev_null_fd, fd) == -1) {
 		return -1;
 	}
@@ -307,7 +309,10 @@ FILE *popen_noshell(const char *file, const char * const *argv, const char *type
 		return NULL;
 	}
 
-	if (pipe(pipefd) != 0) return NULL;
+	// issue #7: O_CLOEXEC, so that child processes don't inherit and hold opened the
+	// file descriptors of the parent.
+	// The child process turns this off for its fd of the pipe.
+	if (pipe2(pipefd, O_CLOEXEC) != 0) return NULL;
 
 	if (_popen_noshell_fork_mode) { // use fork()
 
