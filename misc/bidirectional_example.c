@@ -4,7 +4,7 @@
 
 /*
  * XXX: NOTE: No error checking is performed, in order to simplify the example code.
- * Reference [issue 5]: https://code.google.com/p/popen-noshell/issues/detail?id=5&can=1
+ * Reference [issue #5]: https://github.com/famzah/popen-noshell/issues/5
  */
 
 // use this struct to easily pass several parameters at once
