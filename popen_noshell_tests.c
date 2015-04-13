@@ -41,6 +41,11 @@
 
 int do_unit_tests_ignore_stderr;
 
+char *bin_bash = "/bin/bash";
+char *bin_true = "/bin/true";
+char *bin_cat  = "/bin/cat";
+char *bin_echo = "/bin/echo";
+
 void satisfy_open_FDs_leak_detection_and_exit() {
 	/* satisfy Valgrind FDs leak detection for the parent process */
 	if (fflush(stdout) != 0) err(EXIT_FAILURE, "fflush(stdout)");
@@ -75,6 +80,21 @@ void assert_status_exit_code(int code, int status) {
 	assert_int(code, status >> 8, "assert_status_exit_code");
 }
 
+FILE *safe_popen_noshell(const char *file, const char * const *argv, const char *type, struct popen_noshell_pass_to_pclose *pclose_arg, int ignore_stderr) {
+	FILE *fp = popen_noshell(file, argv, type, pclose_arg, ignore_stderr);
+	if (!fp) err(EXIT_FAILURE, "popen_noshell");
+	return fp;
+}
+
+void safe_pclose_noshell(struct popen_noshell_pass_to_pclose *arg) {
+	int status;
+
+	status = pclose_noshell(arg);
+	if (status != 0) {
+		err(EXIT_FAILURE, "pclose_noshell()");
+	}
+}
+
 void unit_test(int reading, char *argv[], char *expected_string, int expected_signal, int expected_exit_code) {
 	FILE *fp;
 	char buf[256];
@@ -83,8 +103,7 @@ void unit_test(int reading, char *argv[], char *expected_string, int expected_si
 	char *received;
 	size_t received_size;
 
-	fp = popen_noshell(argv[0], (const char * const *)argv, reading ? "r" : "w", &pclose_arg, do_unit_tests_ignore_stderr);
-	if (!fp) err(EXIT_FAILURE, "popen_noshell");
+	fp = safe_popen_noshell(argv[0], (const char * const *)argv, reading ? "r" : "w", &pclose_arg, do_unit_tests_ignore_stderr);
 
 	if (reading) {
 		received_size = strlen(expected_string) + 256; // so that we can store a bit longer strings that we expected and discover the mismatch
@@ -116,10 +135,6 @@ void unit_test(int reading, char *argv[], char *expected_string, int expected_si
 void do_unit_tests() {
 	int test_num = 0;
 	int more_to_test = 1;
-	char *bin_bash = "/bin/bash";
-	char *bin_true = "/bin/true";
-	char *bin_cat  = "/bin/cat";
-	char *bin_echo = "/bin/echo";
 
 	do {
 		++test_num;
@@ -200,6 +215,17 @@ void issue_4_double_free() { // make sure we don't re-introduce this bug
 	}
 }
 
+void issue_7_missing_cloexec() {
+	struct popen_noshell_pass_to_pclose pc1, pc2;
+	const char *cmd[] = {bin_cat, NULL};
+	
+	// we don't even need the returned FILE *
+	safe_popen_noshell(cmd[0], cmd, "w", &pc1, 0);
+	safe_popen_noshell(cmd[0], cmd, "w", &pc2, 0);
+	safe_pclose_noshell(&pc1);
+	safe_pclose_noshell(&pc2);
+}
+
 void proceed_to_unit_tests_and_exit() {
 	popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_CLONE); /* the default one */
 	do_unit_tests();
@@ -207,6 +233,8 @@ void proceed_to_unit_tests_and_exit() {
 	do_unit_tests();
 
 	issue_4_double_free();
+
+	issue_7_missing_cloexec();
 
 	printf("Tests passed OK.\n");
 
