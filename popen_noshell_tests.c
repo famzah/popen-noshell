@@ -22,6 +22,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <alloca.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 /***************************************************
  * popen_noshell C unit test and use-case examples *
@@ -90,9 +94,7 @@ void safe_pclose_noshell(struct popen_noshell_pass_to_pclose *arg) {
 	int status;
 
 	status = pclose_noshell(arg);
-	if (status != 0) {
-		err(EXIT_FAILURE, "pclose_noshell()");
-	}
+	assert_status_exit_code(0, status);
 }
 
 void unit_test(int reading, char *argv[], char *expected_string, int expected_signal, int expected_exit_code) {
@@ -227,6 +229,99 @@ void issue_7_missing_cloexec() {
 	safe_pclose_noshell(&pc2);
 }
 
+int _issue_8_mute_stderr() {
+	int fd2;
+	int saved_stderr_fd;
+
+	saved_stderr_fd = open("/dev/null", O_WRONLY); // get a valid, free "fd" number
+	if (saved_stderr_fd < 0) {
+		err(EXIT_FAILURE, "open(\"/dev/null\")");
+	}
+	if (dup2(STDERR_FILENO, saved_stderr_fd) < 0) { // store the current STDERR "fd" info
+		err(EXIT_FAILURE, "dup2(stderr to saved_stderr_fd)");
+	}
+	/*if (close(STDERR_FILENO) < 0) { // mute, or else we display the STDERR from the child
+		err(EXIT_FAILURE, "close(stderr)");
+	}*/
+
+	fd2 = open("/dev/null", O_WRONLY);
+	if (fd2 < 0) {
+		err(EXIT_FAILURE, "open(\"/dev/null\")");
+	}
+	if (dup2(fd2, STDERR_FILENO) < 0) { // mute, or else we display the STDERR from the child
+		#define _temp_err_msg "dup2(/dev/null to stderr) failed\n"
+
+		/* we may not have STDERR, so write() to the saved "fd" first */
+		write(saved_stderr_fd, _temp_err_msg, strlen(_temp_err_msg));
+
+		err(EXIT_FAILURE, _temp_err_msg); 
+
+		#undef _temp_err_msg
+	}
+
+	return saved_stderr_fd;
+}
+
+void _issue_8_restore_stderr(int saved_stderr_fd) {
+	if (dup2(saved_stderr_fd, STDERR_FILENO) < 0) {
+		#define _temp_err_msg "dup2(restore stderr) failed\n"
+
+		/* we don't have STDERR, so write() to the saved "fd" first */
+		write(saved_stderr_fd, _temp_err_msg, strlen(_temp_err_msg));
+
+		err(EXIT_FAILURE, _temp_err_msg); 
+
+		#undef _temp_err_msg
+	}
+}
+
+int _issue_8_call_popen(int stderr_mode) {
+	struct popen_noshell_pass_to_pclose pc;
+	const char *cmd[] = {bin_cat, NULL};
+
+	safe_popen_noshell(cmd[0], cmd, "w", &pc, stderr_mode);
+	return pclose_noshell(&pc);
+}
+
+void issue_8_stderr_mode_test_invalid_mode() {
+	int last_valid_mode = 1;
+	int stderr_mode;
+	int status;
+	pid_t pid, ret;
+	int saved_stderr_fd;
+
+	for (stderr_mode = 0; stderr_mode <= last_valid_mode; ++stderr_mode) { /* no errors expected */
+		status = _issue_8_call_popen(stderr_mode);
+		assert_status_exit_code(0, status);
+	}
+	/* XXX: stderr_mode is now invalid and equals "last_valid_mode + 1" */
+
+	pid = fork(); // fork, because we're doing some funny stuff with STDERR
+	if (pid == -1) {
+		err(EXIT_FAILURE, "fork()");
+	}
+
+	if (pid == 0) { // forked process
+		saved_stderr_fd = _issue_8_mute_stderr(); // temporarily
+		status = _issue_8_call_popen(stderr_mode /* invalid */);
+		_issue_8_restore_stderr(saved_stderr_fd);
+		assert_status_exit_code(254, status);
+		exit(0);
+	}
+	
+	/* parent continues here */
+
+	ret = waitpid(pid, &status, 0);
+	if (ret != pid) {
+		errx(EXIT_FAILURE, "waitpid() failed");
+	}
+	if (status != 0) {
+		errx(EXIT_FAILURE,
+			"issue_8_stderr_mode_test_invalid_mode(): failed for %d", stderr_mode
+		);
+	}
+}
+
 void proceed_to_standard_unit_tests() {
 	do_unit_tests_ignore_stderr = 1; /* do we ignore STDERR from the executed commands? */
 
@@ -239,6 +334,7 @@ void proceed_to_standard_unit_tests() {
 void proceed_to_issues_tests() {
 	issue_4_double_free();
 	issue_7_missing_cloexec();
+	issue_8_stderr_mode_test_invalid_mode();
 }
 
 int main() {

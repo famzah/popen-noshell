@@ -136,7 +136,7 @@ void _popen_noshell_child_process(
 			}
 			break;
 		default:
-			_ERRX(255, "_popen_noshell_child_process: Unknown 'stderr_mode' %d", stderr_mode);
+			_ERRX(254, "_popen_noshell_child_process: Unknown 'stderr_mode' %d", stderr_mode);
 			break;
 	}
 
