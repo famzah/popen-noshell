@@ -258,6 +258,7 @@ int _issue_8_mute_stderr() {
 
 		#undef _temp_err_msg
 	}
+	close(fd2); // satisfy Valgrind
 
 	return saved_stderr_fd;
 }
@@ -273,6 +274,7 @@ void _issue_8_restore_stderr(int saved_stderr_fd) {
 
 		#undef _temp_err_msg
 	}
+	close(saved_stderr_fd); // satisfy Valgrind
 }
 
 int _issue_8_call_popen(int stderr_mode) {
@@ -303,10 +305,13 @@ void issue_8_stderr_mode_test_invalid_mode() {
 
 	if (pid == 0) { // forked process
 		saved_stderr_fd = _issue_8_mute_stderr(); // temporarily
+		// XXX: When the popen_noshell() call fails before its exec() phase,
+		// XXX: the opened "saved_stderr_fd" is detected as leaked by Valgrind,
+		// XXX: but this is unavoidable.
 		status = _issue_8_call_popen(stderr_mode /* invalid */);
 		_issue_8_restore_stderr(saved_stderr_fd);
 		assert_status_exit_code(254, status);
-		exit(0);
+		satisfy_open_FDs_leak_detection_and_exit();
 	}
 	
 	/* parent continues here */

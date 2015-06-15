@@ -116,6 +116,25 @@ void _pclose_noshell_free_clone_arg_memory(struct popen_noshell_clone_arg *func_
 	free(func_args);
 }
 
+void _popen_noshell_child_process_cleanup_fail_and_exit(int exit_code, struct popen_noshell_clone_arg *arg_ptr) {
+
+#ifdef POPEN_NOSHELL_VALGRIND_DEBUG
+	if (arg_ptr) { /* not NULL if we were called by clone() */
+		/* but Valgrind does not support clone(), so we were actually called by fork(), thus memory was copied... */
+		/* free this copied memory; if it was not Valgrind, this memory would have been shared and would belong to the parent! */
+		_pclose_noshell_free_clone_arg_memory(arg_ptr);
+	}
+#endif
+
+	if (fflush(stdout) != 0) _ERR(255, "fflush(stdout)");
+	if (fflush(stderr) != 0) _ERR(255, "fflush(stderr)");
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
+
+	_exit(exit_code); // call _exit() and not exit(), or you'll have troubles in C++
+}
+
 void _popen_noshell_child_process(
 	/* We need the pointer *arg_ptr only to free whatever we reference if exec() fails and we were fork()'ed (thus memory was copied),
 	 * not clone()'d */
@@ -157,7 +176,10 @@ void _popen_noshell_child_process(
 			}
 			break;
 		default:
-			_ERRX(254, "_popen_noshell_child_process: Unknown 'stderr_mode' %d", stderr_mode);
+			// unlike in the previous cases, we unit-test this error,
+			// so we take special measures to clean-up well, or else Valgrind complains
+			warnx("_popen_noshell_child_process: Unknown 'stderr_mode' %d", stderr_mode);
+			_popen_noshell_child_process_cleanup_fail_and_exit(254, arg_ptr);
 			break;
 	}
 
@@ -167,21 +189,7 @@ void _popen_noshell_child_process(
 
 	warn("exec(\"%s\") inside the child", file);
 
-#ifdef POPEN_NOSHELL_VALGRIND_DEBUG
-	if (arg_ptr) { /* not NULL if we were called by clone() */
-		/* but Valgrind does not support clone(), so we were actually called by fork(), thus memory was copied... */
-		/* free this copied memory; if it was not Valgrind, this memory would have been shared and would belong to the parent! */
-		_pclose_noshell_free_clone_arg_memory(arg_ptr);
-	}
-#endif
-
-	if (fflush(stdout) != 0) _ERR(255, "fflush(stdout)");
-	if (fflush(stderr) != 0) _ERR(255, "fflush(stderr)");
-	close(STDIN_FILENO);
-	close(STDOUT_FILENO);
-	close(STDERR_FILENO);
-
-	_exit(255); // call _exit() and not exit(), or you'll have troubles in C++
+	_popen_noshell_child_process_cleanup_fail_and_exit(255, arg_ptr);
 }
 
 int popen_noshell_child_process_by_clone(void *raw_arg) {
