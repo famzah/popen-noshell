@@ -227,25 +227,26 @@ void issue_7_missing_cloexec() {
 	safe_pclose_noshell(&pc2);
 }
 
-void proceed_to_unit_tests_and_exit() {
+void proceed_to_standard_unit_tests() {
+	do_unit_tests_ignore_stderr = 1; /* do we ignore STDERR from the executed commands? */
+
 	popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_CLONE); /* the default one */
 	do_unit_tests();
 	popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_FORK);
 	do_unit_tests();
+}
 
+void proceed_to_issues_tests() {
 	issue_4_double_free();
-
 	issue_7_missing_cloexec();
+}
+
+int main() {
+	proceed_to_standard_unit_tests();
+	proceed_to_issues_tests();
 
 	printf("Tests passed OK.\n");
 
 	satisfy_open_FDs_leak_detection_and_exit();
-}
-
-int main() {
-	do_unit_tests_ignore_stderr = 1; /* do we ignore STDERR from the executed commands? */
-	proceed_to_unit_tests_and_exit();
-	satisfy_open_FDs_leak_detection_and_exit();
-
-	return 0;
+	return 0; /* never reached, because we did exit(0) already */
 }
