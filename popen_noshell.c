@@ -127,19 +127,6 @@ void _popen_noshell_child_process(
 	int dupped_child_fd;
 	int pipefd[2] = {pipefd_0, pipefd_1};
 
-	switch (stderr_mode) {
-		case 0: /* leave attached to parent */
-			break;
-		case 1: /* ignore STDERR completely */
-			if (popen_noshell_reopen_fd_to_dev_null(STDERR_FILENO) != 0) {
-				_ERR(255, "popen_noshell_reopen_fd_to_dev_null(%d)", STDERR_FILENO);
-			}
-			break;
-		default:
-			_ERRX(254, "_popen_noshell_child_process: Unknown 'stderr_mode' %d", stderr_mode);
-			break;
-	}
-
 	if (read_pipe) {
 		closed_child_fd = STDIN_FILENO;		/* re-open STDIN to /dev/null */
 		closed_pipe_fd = 0;			/* close read end of pipe */
@@ -154,6 +141,24 @@ void _popen_noshell_child_process(
 	}
 	if (_popen_noshell_close_and_dup(pipefd, closed_pipe_fd, dupped_child_fd) != 0) {
 		_ERR(255, "_popen_noshell_close_and_dup(%d ,%d)", closed_pipe_fd, dupped_child_fd);
+	}
+
+	switch (stderr_mode) {
+		case 0: /* leave attached to parent */
+			break;
+		case 1: /* ignore STDERR completely */
+			if (popen_noshell_reopen_fd_to_dev_null(STDERR_FILENO) != 0) {
+				_ERR(255, "popen_noshell_reopen_fd_to_dev_null(%d)", STDERR_FILENO);
+			}
+			break;
+		case 2: /* redirect to STDOUT */
+			if (dup2(STDOUT_FILENO, STDERR_FILENO) < 0) {
+				_ERR(255, "dup2(redirect STDERR to STDOUT)");
+			}
+			break;
+		default:
+			_ERRX(254, "_popen_noshell_child_process: Unknown 'stderr_mode' %d", stderr_mode);
+			break;
 	}
 
 	execvp(file, (char * const *)argv);
@@ -291,6 +296,7 @@ pid_t popen_noshell_vmfork(int (*fn)(void *), void *arg, void **memory_to_free_o
  * "stderr_mode" has the following meaning:
  *	0: leave STDERR of the child process attached to the current STDERR of the parent process
  * 	1: ignore the STDERR of the child process
+ * 	2: redirect the STDERR of the child process to its STDOUT
  *
  * This function is not very sustainable on failures. This means that if it fails for some reason (out of memory, no such executable, etc.),
  * you are probably in trouble, because the function allocated some memory or file descriptors and never released them.

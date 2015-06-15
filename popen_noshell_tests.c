@@ -284,7 +284,7 @@ int _issue_8_call_popen(int stderr_mode) {
 }
 
 void issue_8_stderr_mode_test_invalid_mode() {
-	int last_valid_mode = 1;
+	int last_valid_mode = 2;
 	int stderr_mode;
 	int status;
 	pid_t pid, ret;
@@ -322,6 +322,51 @@ void issue_8_stderr_mode_test_invalid_mode() {
 	}
 }
 
+void _issue_8_assert_no_more_output(char *buf, size_t buf_size, FILE *fp, int stderr_mode) {
+	if (fgets(buf, buf_size - 1, fp) == NULL && feof(fp)) {
+		// all good: nothing read, and we got EOF immediately
+	} else {
+		errx(EXIT_FAILURE,
+			"issue_8_stderr_mode_test_option_2():"\
+			" mode=%d, and we have output or error?",
+			stderr_mode
+		);
+	}
+}
+
+void issue_8_stderr_mode_test_option_2() {
+	struct popen_noshell_pass_to_pclose pc;
+	const char *cmd[] = {bin_bash, "-c", "echo STDERR message >&2", NULL};
+	int stderr_mode;
+	FILE *fp;
+	char buf[256];
+
+	for (stderr_mode = 1; stderr_mode <= 2; ++stderr_mode) {
+		fp = safe_popen_noshell(cmd[0], cmd, "r", &pc, stderr_mode);
+
+		if (stderr_mode == 1) {
+			// we ignore STDERR, so we don't expect any output
+			_issue_8_assert_no_more_output(buf, sizeof(buf), fp, stderr_mode);
+		} else if (stderr_mode == 2) {
+			if (fgets(buf, sizeof(buf) - 1, fp) == NULL) {
+				errx(EXIT_FAILURE,
+					"issue_8_stderr_mode_test_option_2():"\
+					" mode=%d and we have NO output, or got an error?",
+					stderr_mode
+				);
+			}
+			assert_string("STDERR message\n", buf,
+				"issue_8_stderr_mode_test_option_2()"
+			);
+			_issue_8_assert_no_more_output(buf, sizeof(buf), fp, stderr_mode);
+		} else {
+			errx(EXIT_FAILURE, "never reached");
+		}
+
+		safe_pclose_noshell(&pc);
+	}
+}
+
 void proceed_to_standard_unit_tests() {
 	do_unit_tests_ignore_stderr = 1; /* do we ignore STDERR from the executed commands? */
 
@@ -335,6 +380,7 @@ void proceed_to_issues_tests() {
 	issue_4_double_free();
 	issue_7_missing_cloexec();
 	issue_8_stderr_mode_test_invalid_mode();
+	issue_8_stderr_mode_test_option_2();
 }
 
 int main() {
