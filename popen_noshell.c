@@ -37,8 +37,7 @@
 
 /*
  * Wish-list:
- *	1) Make the "ignore_stderr" parameter a mode - ignore, leave unchanged, redirect to stdout (the last is not implemented yet)
- *	2) Code a faster system(): system_noshell(), system_noshell_compat()
+ *	*) Code a faster system(): system_noshell(), system_noshell_compat()
  */
 
 //#define POPEN_NOSHELL_DEBUG
@@ -121,15 +120,24 @@ void _popen_noshell_child_process(
 	/* We need the pointer *arg_ptr only to free whatever we reference if exec() fails and we were fork()'ed (thus memory was copied),
 	 * not clone()'d */
 	struct popen_noshell_clone_arg *arg_ptr, /* NULL if we were called by pure fork() (not because of Valgrind) */
-	int pipefd_0, int pipefd_1, int read_pipe, int ignore_stderr, const char *file, const char * const *argv) {
+	int pipefd_0, int pipefd_1, int read_pipe, int stderr_mode, const char *file, const char * const *argv) {
 
 	int closed_child_fd;
 	int closed_pipe_fd;
 	int dupped_child_fd;
 	int pipefd[2] = {pipefd_0, pipefd_1};
 
-	if (ignore_stderr) { /* ignore STDERR completely? */
-		if (popen_noshell_reopen_fd_to_dev_null(STDERR_FILENO) != 0) _ERR(255, "popen_noshell_reopen_fd_to_dev_null(%d)", STDERR_FILENO);
+	switch (stderr_mode) {
+		case 0: /* leave attached to parent */
+			break;
+		case 1: /* ignore STDERR completely */
+			if (popen_noshell_reopen_fd_to_dev_null(STDERR_FILENO) != 0) {
+				_ERR(255, "popen_noshell_reopen_fd_to_dev_null(%d)", STDERR_FILENO);
+			}
+			break;
+		default:
+			_ERRX(255, "_popen_noshell_child_process: Unknown 'stderr_mode' %d", stderr_mode);
+			break;
 	}
 
 	if (read_pipe) {
@@ -175,7 +183,7 @@ int popen_noshell_child_process_by_clone(void *raw_arg) {
 	struct popen_noshell_clone_arg *arg;
 
 	arg = (struct popen_noshell_clone_arg *)raw_arg;
-	_popen_noshell_child_process(arg, arg->pipefd_0, arg->pipefd_1, arg->read_pipe, arg->ignore_stderr, arg->file, arg->argv);
+	_popen_noshell_child_process(arg, arg->pipefd_0, arg->pipefd_1, arg->read_pipe, arg->stderr_mode, arg->file, arg->argv);
 
 	return 0;
 }
@@ -280,7 +288,7 @@ pid_t popen_noshell_vmfork(int (*fn)(void *), void *arg, void **memory_to_free_o
  *	Note: The last element must be a (char *)NULL terminating element.
  * "type" specifies if we are reading from the STDOUT or writing to the STDIN of the executed command "file". Use "r" for reading, "w" for writing.
  * "pid" is a pointer to an interger. The PID of the child process is stored there.
- * "ignore_stderr" has the following meaning:
+ * "stderr_mode" has the following meaning:
  *	0: leave STDERR of the child process attached to the current STDERR of the parent process
  * 	1: ignore the STDERR of the child process
  *
@@ -292,7 +300,7 @@ pid_t popen_noshell_vmfork(int (*fn)(void *), void *arg, void **memory_to_free_o
  * On success, a stream pointer is returned.
  * 	When you are done working with the stream, you have to close it by calling pclose_noshell(), or else you will leave zombie processes.
  */
-FILE *popen_noshell(const char *file, const char * const *argv, const char *type, struct popen_noshell_pass_to_pclose *pclose_arg, int ignore_stderr) {
+FILE *popen_noshell(const char *file, const char * const *argv, const char *type, struct popen_noshell_pass_to_pclose *pclose_arg, int stderr_mode) {
 	int read_pipe;
 	int pipefd[2]; // 0 -> READ, 1 -> WRITE ends
 	pid_t pid;
@@ -319,7 +327,7 @@ FILE *popen_noshell(const char *file, const char * const *argv, const char *type
 		pid = fork();
 		if (pid == -1) return NULL;
 		if (pid == 0) {
-			_popen_noshell_child_process(NULL, pipefd[0], pipefd[1], read_pipe, ignore_stderr, file, argv);
+			_popen_noshell_child_process(NULL, pipefd[0], pipefd[1], read_pipe, stderr_mode, file, argv);
 			errx(EXIT_FAILURE, "This must never happen");
 		} // child life ends here, for sure
 
@@ -334,7 +342,7 @@ FILE *popen_noshell(const char *file, const char * const *argv, const char *type
 		arg->pipefd_0 = pipefd[0];
 		arg->pipefd_1 = pipefd[1];
 		arg->read_pipe = read_pipe;
-		arg->ignore_stderr = ignore_stderr;
+		arg->stderr_mode = stderr_mode;
 		arg->file = strdup(file);
 		if (!arg->file) return NULL;
 		arg->argv = (const char * const *)popen_noshell_copy_argv(argv);

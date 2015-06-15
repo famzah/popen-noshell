@@ -34,7 +34,7 @@ struct popen_noshell_clone_arg {
 	int pipefd_0;
 	int pipefd_1;
 	int read_pipe;
-	int ignore_stderr;
+	int stderr_mode;
 	const char *file;
 	const char * const *argv;
 };
@@ -52,7 +52,7 @@ struct popen_noshell_pass_to_pclose {
  ***************************/
 
 /* this is the native function call */
-FILE *popen_noshell(const char *file, const char * const *argv, const char *type, struct popen_noshell_pass_to_pclose *pclose_arg, int ignore_stderr);
+FILE *popen_noshell(const char *file, const char * const *argv, const char *type, struct popen_noshell_pass_to_pclose *pclose_arg, int stderr_mode);
 
 /* more insecure, but more compatible with popen() */
 FILE *popen_noshell_compat(const char *command, const char *type, struct popen_noshell_pass_to_pclose *pclose_arg);

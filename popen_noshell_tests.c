@@ -80,8 +80,8 @@ void assert_status_exit_code(int code, int status) {
 	assert_int(code, status >> 8, "assert_status_exit_code");
 }
 
-FILE *safe_popen_noshell(const char *file, const char * const *argv, const char *type, struct popen_noshell_pass_to_pclose *pclose_arg, int ignore_stderr) {
-	FILE *fp = popen_noshell(file, argv, type, pclose_arg, ignore_stderr);
+FILE *safe_popen_noshell(const char *file, const char * const *argv, const char *type, struct popen_noshell_pass_to_pclose *pclose_arg, int stderr_mode) {
+	FILE *fp = popen_noshell(file, argv, type, pclose_arg, stderr_mode);
 	if (!fp) err(EXIT_FAILURE, "popen_noshell");
 	return fp;
 }
@@ -102,8 +102,9 @@ void unit_test(int reading, char *argv[], char *expected_string, int expected_si
 	struct popen_noshell_pass_to_pclose pclose_arg;
 	char *received;
 	size_t received_size;
+	int stderr_mode = (do_unit_tests_ignore_stderr ? 1 : 0);
 
-	fp = safe_popen_noshell(argv[0], (const char * const *)argv, reading ? "r" : "w", &pclose_arg, do_unit_tests_ignore_stderr);
+	fp = safe_popen_noshell(argv[0], (const char * const *)argv, reading ? "r" : "w", &pclose_arg, stderr_mode);
 
 	if (reading) {
 		received_size = strlen(expected_string) + 256; // so that we can store a bit longer strings that we expected and discover the mismatch
