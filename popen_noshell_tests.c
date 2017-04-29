@@ -142,7 +142,7 @@ void do_unit_tests() {
 
 	do {
 		++test_num;
-		printf("Test %d... ", test_num);
+		//printf("Test %d... ", test_num);
 		switch (test_num) {
 			case 1: {
 				char *argv[] = {"/", NULL};
@@ -208,7 +208,7 @@ void do_unit_tests() {
 				more_to_test = 0;
 				break;
 		}
-		printf("done\n");
+		//printf("done\n");
 	} while (more_to_test);
 
 	assert_int(11, test_num - 1, "Test count");
