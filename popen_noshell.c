@@ -352,7 +352,7 @@ pid_t popen_noshell_vmfork(int (*fn)(void *), void *arg, void **memory_to_free_o
 		 */
 		
 #ifndef POPEN_NOSHELL_VALGRIND_DEBUG
-		pid = clone(fn, stack_aligned, CLONE_VM | CLONE_SETTLS, arg);
+		pid = clone(fn, stack_aligned, CLONE_VM | SIGCHLD | CLONE_VFORK, arg);
 #else
 		pid = fork(); // Valgrind does not support arbitrary clone() calls, so we use fork for the tests
 #endif
