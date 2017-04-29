@@ -9,4 +9,8 @@ For more detailed information and benchmarks, please review the following blog p
 
 Documentation, examples, unit tests and a performance benchmark tool are included in the source code.
 
+A few caveats, as described in issue #11:
+- If you use any signal handlers in the parent process, you may need to temporarily block them before executing popen_noshell().
+- Multi-threaded applications must be extra careful, especially with setuid() calls and its friends.
+
 Any comments, positive or negative, are welcome. Send them directly to my Gmail address, or use the "Issues" tracker here.
