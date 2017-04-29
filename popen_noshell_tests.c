@@ -138,13 +138,20 @@ void unit_test(int reading, char *argv[], char *expected_string, int expected_si
 void do_unit_tests() {
 	int test_num = 0;
 	int more_to_test = 1;
+	int ec;
 
 	do {
 		++test_num;
+		printf("Test %d... ", test_num);
 		switch (test_num) {
 			case 1: {
 				char *argv[] = {"/", NULL};
-				unit_test(1, argv, "", 0, 255); // failed to execute binary (status code is -1, STDOUT is empty, STDERR text)
+				if (popen_noshell_get_fork_mode() == POPEN_NOSHELL_MODE_POSIX_SPAWN) {
+					ec = 127;
+				} else {
+					ec = 255;
+				}
+				unit_test(1, argv, "", 0, ec); // failed to execute binary (status code is -1, STDOUT is empty, STDERR text)
 				break;
 			}
 			case 2: {
@@ -201,6 +208,7 @@ void do_unit_tests() {
 				more_to_test = 0;
 				break;
 		}
+		printf("done\n");
 	} while (more_to_test);
 
 	assert_int(11, test_num - 1, "Test count");
@@ -291,6 +299,7 @@ void issue_8_stderr_mode_test_invalid_mode() {
 	int status;
 	pid_t pid, ret;
 	int saved_stderr_fd;
+	int got_err;
 
 	for (stderr_mode = 0; stderr_mode <= last_valid_mode; ++stderr_mode) { /* no errors expected */
 		status = _issue_8_call_popen(stderr_mode);
@@ -309,6 +318,11 @@ void issue_8_stderr_mode_test_invalid_mode() {
 		// XXX: the opened "saved_stderr_fd" is detected as leaked by Valgrind,
 		// XXX: but this is unavoidable.
 		status = _issue_8_call_popen(stderr_mode /* invalid */);
+		if (popen_noshell_get_fork_mode() == POPEN_NOSHELL_MODE_POSIX_SPAWN) {
+			// this must never be reached
+			// since safe_popen_noshell() already died
+			exit(201);
+		}
 		_issue_8_restore_stderr(saved_stderr_fd);
 		assert_status_exit_code(254, status);
 		satisfy_open_FDs_leak_detection_and_exit();
@@ -320,9 +334,19 @@ void issue_8_stderr_mode_test_invalid_mode() {
 	if (ret != pid) {
 		errx(EXIT_FAILURE, "waitpid() failed");
 	}
-	if (status != 0) {
+
+	if (popen_noshell_get_fork_mode() == POPEN_NOSHELL_MODE_POSIX_SPAWN) {
+		// posix_spawn() detects the error before it executes a child process
+		// and therefore, popen_noshell() returns NULL
+		// which is caught early by safe_popen_noshell() which dies with exit code 1
+		got_err = (status >> 8 != 1);
+	} else {
+		got_err = (status != 0);
+	}
+	if (got_err) {
 		errx(EXIT_FAILURE,
-			"issue_8_stderr_mode_test_invalid_mode(): failed for %d", stderr_mode
+			"issue_8_stderr_mode_test_invalid_mode(): failed for %d (exit code=%d, status=%d)",
+			stderr_mode, status >> 8, status
 		);
 	}
 }
@@ -376,6 +400,8 @@ void proceed_to_standard_unit_tests() {
 	do_unit_tests_ignore_stderr = 1; /* do we ignore STDERR from the executed commands? */
 
 	popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_CLONE); /* the default one */
+	do_unit_tests();
+	popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_POSIX_SPAWN);
 	do_unit_tests();
 	popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_FORK);
 	do_unit_tests();

@@ -26,6 +26,9 @@
 #include <getopt.h>
 #include <ctype.h>
 #include "popen_noshell.h"
+#include <spawn.h>
+
+extern char **environ;
 
 /*
  * This is a performance test program.
@@ -82,9 +85,30 @@ void popen_test(int type) {
 	}
 }
 
+void parent_waitpid(pid_t pid) {
+	int status;
+
+	if (waitpid(pid, &status, 0) != pid) {
+		err(EXIT_FAILURE, "waitpid()");
+	}
+	if (status != 0) {
+		errx(EXIT_FAILURE, "status code is non-zero");
+	}
+}
+
+void posix_spawn_test() {
+	pid_t pid;
+	char * const argv[] = { "./tiny2" , NULL };
+
+	if (posix_spawn(&pid, "./tiny2", NULL, NULL, argv, environ) != 0) {
+		err(EXIT_FAILURE, "posix_spawn()");
+	}
+
+	parent_waitpid(pid);
+}
+
 void fork_test(int type) {
 	pid_t pid;
-	int status;
 
 	if (type) {
 		pid = fork();
@@ -101,12 +125,7 @@ void fork_test(int type) {
 	}
 
 	// parent process
-	if (waitpid(pid, &status, 0) != pid) {
-		err(EXIT_FAILURE, "waitpid()");
-	}
-	if (status != 0) {
-		errx(EXIT_FAILURE, "status code is non-zero");
-	}
+	parent_waitpid(pid);
 }
 
 char *allocate_memory(int size_in_mb, int ratio) {
@@ -217,7 +236,6 @@ void parse_argv(int argc, char **argv, int *count, int *allocated_memory_size_in
 
 int main(int argc, char **argv) {
 	int count;
-	char *m;
 	int allocated_memory_size_in_mb;
 	int allocated_memory_usage_ratio;
 	int test_mode;
@@ -230,7 +248,7 @@ int main(int argc, char **argv) {
 
 	parse_argv(argc, argv, &count, &allocated_memory_size_in_mb, &allocated_memory_usage_ratio, &test_mode);
 
-	m = allocate_memory(allocated_memory_size_in_mb, allocated_memory_usage_ratio);
+	allocate_memory(allocated_memory_size_in_mb, allocated_memory_usage_ratio);
 
 	warnx("Test options: count=%d, memsize=%d, ratio=%d, mode=%d", count, allocated_memory_size_in_mb, allocated_memory_usage_ratio, test_mode);
 
@@ -247,7 +265,9 @@ int main(int argc, char **argv) {
 				break;
 			case 2:
 				if (!wrote) warnx("system(), standard Libc");
-				system("./tiny2 >/dev/null");
+				if (system("./tiny2 >/dev/null") != 0) {
+					err(EXIT_FAILURE, "system()");
+				}
 				break;
 
 			/* all the below popen() use-cases are tested if they return the correct string in *fp */
@@ -263,7 +283,7 @@ int main(int argc, char **argv) {
 				break;
 			case 5:
 				use_noshell_compat = 0;
-				if (!wrote) warnx("the new noshell, default vfork(), compat=%d", use_noshell_compat);
+				if (!wrote) warnx("the new noshell, default clone(), compat=%d", use_noshell_compat);
 				popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_CLONE);
 				popen_test(USE_NOSHELL_POPEN);
 				break;
@@ -275,9 +295,26 @@ int main(int argc, char **argv) {
 				break;
 			case 7:
 				use_noshell_compat = 1;
-				if (!wrote) warnx("the new noshell, default vfork(), compat=%d", use_noshell_compat);
+				if (!wrote) warnx("the new noshell, default clone(), compat=%d", use_noshell_compat);
 				popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_CLONE);
 				popen_test(USE_NOSHELL_POPEN);
+				break;
+			case 8:
+				use_noshell_compat = 0;
+				if (!wrote) warnx("the new noshell, posix_spawn(), compat=%d", use_noshell_compat);
+				popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_POSIX_SPAWN);
+				popen_test(USE_NOSHELL_POPEN);
+				break;
+			case 9:
+				use_noshell_compat = 1;
+				if (!wrote) warnx("the new noshell, posix_spawn(), compat=%d", use_noshell_compat);
+				popen_noshell_set_fork_mode(POPEN_NOSHELL_MODE_POSIX_SPAWN);
+				popen_test(USE_NOSHELL_POPEN);
+				break;
+			case 10:
+				use_noshell_compat = 1;
+				if (!wrote) warnx("posix_spawn() + exec() no pipes, standard Libc");
+				posix_spawn_test();
 				break;
 			default:
 				errx(EXIT_FAILURE, "Bad mode");

@@ -29,6 +29,7 @@
 /* constants to use with popen_noshell_set_fork_mode() */
 #define POPEN_NOSHELL_MODE_CLONE 0 /* default, faster */
 #define POPEN_NOSHELL_MODE_FORK 1 /* slower */
+#define POPEN_NOSHELL_MODE_POSIX_SPAWN 2 /* the fastest, if implemented properly by libc: see issue #11 */
 
 struct popen_noshell_clone_arg {
 	int pipefd_0;
@@ -65,5 +66,6 @@ pid_t popen_noshell_vmfork(int (*fn)(void *), void *arg, void **memory_to_free_o
 
 /* used only for benchmarking purposes */
 void popen_noshell_set_fork_mode(int mode);
+int popen_noshell_get_fork_mode();
 
 #endif

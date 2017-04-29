@@ -35,6 +35,9 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include <spawn.h>
+extern char **environ;
+
 /*
  * Wish-list:
  *	*) Code a faster system(): system_noshell(), system_noshell_compat()
@@ -55,52 +58,91 @@
 	}
 
 int _popen_noshell_fork_mode = POPEN_NOSHELL_MODE_CLONE;
+//int _popen_noshell_fork_mode = POPEN_NOSHELL_MODE_POSIX_SPAWN; // use with glibc 2.24+; see issue #11
 
 void popen_noshell_set_fork_mode(int mode) { // see "popen_noshell.h" POPEN_NOSHELL_MODE_* constants
 	_popen_noshell_fork_mode = mode;
 }
 
-int popen_noshell_reopen_fd_to_dev_null(int fd) {
+int popen_noshell_get_fork_mode() { // see "popen_noshell.h" POPEN_NOSHELL_MODE_* constants
+	return _popen_noshell_fork_mode;
+}
+
+int popen_noshell_reopen_fd_to_dev_null(int fd, posix_spawn_file_actions_t *file_actions) {
 	int dev_null_fd;
 
-	dev_null_fd = open("/dev/null", O_RDWR);
-	if (dev_null_fd < 0) return -1;
+	if (_popen_noshell_fork_mode == POPEN_NOSHELL_MODE_POSIX_SPAWN) {
+		if (posix_spawn_file_actions_addclose(file_actions, fd) != 0) {
+			return -1;
+		}
+		if (posix_spawn_file_actions_addopen(file_actions, fd, "/dev/null", O_RDWR, 0600) < 0) {
+			return -1;
+		}
+	} else {
+		dev_null_fd = open("/dev/null", O_RDWR);
+		if (dev_null_fd < 0) return -1;
 
-	if (close(fd) != 0) {
-		return -1;
-	}
-	// man dup2(): The two descriptors do not share file descriptor flags.
-	// The close-on-exec flag (FD_CLOEXEC) for the duplicate descriptor is off.
-	if (dup2(dev_null_fd, fd) == -1) {
-		return -1;
-	}
-	if (close(dev_null_fd) != 0) {
-		return -1;
+		if (close(fd) != 0) {
+			return -1;
+		}
+		// man dup2(): The two descriptors do not share file descriptor flags.
+		// The close-on-exec flag (FD_CLOEXEC) for the duplicate descriptor is off.
+		if (dup2(dev_null_fd, fd) == -1) {
+			return -1;
+		}
+		if (close(dev_null_fd) != 0) {
+			return -1;
+		}
 	}
 
 	return 0;
 }
 
-int _popen_noshell_close_and_dup(int pipefd[2], int closed_pipefd, int target_fd) {
+int _popen_noshell_close_and_dup(int pipefd[2], int closed_pipefd, int target_fd,
+	posix_spawn_file_actions_t *file_actions
+) {
 	int dupped_pipefd;
 
 	dupped_pipefd = (closed_pipefd == 0 ? 1 : 0); // get the FD of the other end of the pipe
 
-	if (close(pipefd[closed_pipefd]) != 0) {
-		return -1;
-	}
+	if (_popen_noshell_fork_mode == POPEN_NOSHELL_MODE_POSIX_SPAWN) {
+		if (posix_spawn_file_actions_addclose(file_actions, pipefd[closed_pipefd]) != 0) {
+			return -1;
+		}
+		if (posix_spawn_file_actions_addclose(file_actions, target_fd) != 0) {
+			return -1;
+		}
+		if (posix_spawn_file_actions_adddup2(file_actions, pipefd[dupped_pipefd], target_fd) < 0) {
+			return -1;
+		}
+		if (posix_spawn_file_actions_addclose(file_actions, pipefd[dupped_pipefd]) != 0) {
+			return -1;
+		}
+	} else {
+		if (close(pipefd[closed_pipefd]) != 0) {
+			return -1;
+		}
 
-	if (close(target_fd) != 0) {
-		return -1;
-	}
-	if (dup2(pipefd[dupped_pipefd], target_fd) == -1) {
-		return -1;
-	}
-	if (close(pipefd[dupped_pipefd]) != 0) {
-		return -1;
+		if (close(target_fd) != 0) {
+			return -1;
+		}
+		if (dup2(pipefd[dupped_pipefd], target_fd) == -1) {
+			return -1;
+		}
+		if (close(pipefd[dupped_pipefd]) != 0) {
+			return -1;
+		}
 	}
 
 	return 0;
+}
+
+int _popen_noshell_dup2(int oldfd, int newfd, posix_spawn_file_actions_t *file_actions) {
+	if (_popen_noshell_fork_mode == POPEN_NOSHELL_MODE_POSIX_SPAWN) {
+		return posix_spawn_file_actions_adddup2(file_actions, oldfd, newfd);
+	} else {
+		return dup2(oldfd, newfd);
+	}
 }
 
 void _pclose_noshell_free_clone_arg_memory(struct popen_noshell_clone_arg *func_args) {
@@ -135,16 +177,28 @@ void _popen_noshell_child_process_cleanup_fail_and_exit(int exit_code, struct po
 	_exit(exit_code); // call _exit() and not exit(), or you'll have troubles in C++
 }
 
-void _popen_noshell_child_process(
+// returns the new PID if called in POPEN_NOSHELL_MODE_POSIX_SPAWN
+// otherwise returns 0
+pid_t _popen_noshell_child_process(
 	/* We need the pointer *arg_ptr only to free whatever we reference if exec() fails and we were fork()'ed (thus memory was copied),
 	 * not clone()'d */
 	struct popen_noshell_clone_arg *arg_ptr, /* NULL if we were called by pure fork() (not because of Valgrind) */
-	int pipefd_0, int pipefd_1, int read_pipe, int stderr_mode, const char *file, const char * const *argv) {
+	int pipefd_0, int pipefd_1, int read_pipe, int stderr_mode, const char *file, const char * const *argv)
+{
 
 	int closed_child_fd;
 	int closed_pipe_fd;
 	int dupped_child_fd;
 	int pipefd[2] = {pipefd_0, pipefd_1};
+	posix_spawn_file_actions_t file_actions_obj;
+	posix_spawn_file_actions_t *file_actions = NULL;
+
+	if (_popen_noshell_fork_mode == POPEN_NOSHELL_MODE_POSIX_SPAWN) {
+		file_actions = &file_actions_obj;
+		if (posix_spawn_file_actions_init(file_actions) != 0) {
+			_ERR(255, "posix_spawn_file_actions_init()");
+		}
+	}
 
 	if (read_pipe) {
 		closed_child_fd = STDIN_FILENO;		/* re-open STDIN to /dev/null */
@@ -155,10 +209,10 @@ void _popen_noshell_child_process(
 		closed_pipe_fd = 1;			/* close write end of pipe */
 		dupped_child_fd = STDIN_FILENO;		/* dup the other pipe end to STDIN */
 	}
-	if (popen_noshell_reopen_fd_to_dev_null(closed_child_fd) != 0) {
+	if (popen_noshell_reopen_fd_to_dev_null(closed_child_fd, file_actions) != 0) {
 		_ERR(255, "popen_noshell_reopen_fd_to_dev_null(%d)", closed_child_fd);
 	}
-	if (_popen_noshell_close_and_dup(pipefd, closed_pipe_fd, dupped_child_fd) != 0) {
+	if (_popen_noshell_close_and_dup(pipefd, closed_pipe_fd, dupped_child_fd, file_actions) != 0) {
 		_ERR(255, "_popen_noshell_close_and_dup(%d ,%d)", closed_pipe_fd, dupped_child_fd);
 	}
 
@@ -166,12 +220,12 @@ void _popen_noshell_child_process(
 		case 0: /* leave attached to parent */
 			break;
 		case 1: /* ignore STDERR completely */
-			if (popen_noshell_reopen_fd_to_dev_null(STDERR_FILENO) != 0) {
+			if (popen_noshell_reopen_fd_to_dev_null(STDERR_FILENO, file_actions) != 0) {
 				_ERR(255, "popen_noshell_reopen_fd_to_dev_null(%d)", STDERR_FILENO);
 			}
 			break;
 		case 2: /* redirect to STDOUT */
-			if (dup2(STDOUT_FILENO, STDERR_FILENO) < 0) {
+			if (_popen_noshell_dup2(STDOUT_FILENO, STDERR_FILENO, file_actions) < 0) {
 				_ERR(255, "dup2(redirect STDERR to STDOUT)");
 			}
 			break;
@@ -179,17 +233,40 @@ void _popen_noshell_child_process(
 			// unlike in the previous cases, we unit-test this error,
 			// so we take special measures to clean-up well, or else Valgrind complains
 			warnx("_popen_noshell_child_process: Unknown 'stderr_mode' %d", stderr_mode);
-			_popen_noshell_child_process_cleanup_fail_and_exit(254, arg_ptr);
+			if (_popen_noshell_fork_mode != POPEN_NOSHELL_MODE_POSIX_SPAWN) {
+				_popen_noshell_child_process_cleanup_fail_and_exit(254, arg_ptr);
+			} else {
+				return 0;
+			}
 			break;
 	}
 
-	execvp(file, (char * const *)argv);
+	if (_popen_noshell_fork_mode != POPEN_NOSHELL_MODE_POSIX_SPAWN) {
+		/* we are inside a fork()'ed child process here */
 
-	/* if we are here, exec() failed */
+		execvp(file, (char * const *)argv);
 
-	warn("exec(\"%s\") inside the child", file);
+		/* if we are here, exec() failed */
 
-	_popen_noshell_child_process_cleanup_fail_and_exit(255, arg_ptr);
+		warn("exec(\"%s\") inside the child", file);
+
+		_popen_noshell_child_process_cleanup_fail_and_exit(255, arg_ptr);
+
+		return 0; // never reached
+	} else {
+		pid_t child_pid;
+		if (posix_spawnp(&child_pid, file, file_actions, NULL, (char * const *)argv, environ) < 0) {
+			warn("posix_spawn(\"%s\") inside the child", file);
+			if (posix_spawn_file_actions_destroy(file_actions) != 0) {
+				warn("posix_spawn_file_actions_destroy()");
+			}
+			return 0;
+		}
+		if (posix_spawn_file_actions_destroy(file_actions) != 0) {
+			warn("posix_spawn_file_actions_destroy()");
+		}
+		return child_pid;
+	}
 }
 
 int popen_noshell_child_process_by_clone(void *raw_arg) {
@@ -336,7 +413,7 @@ FILE *popen_noshell(const char *file, const char * const *argv, const char *type
 	// The child process turns this off for its fd of the pipe.
 	if (pipe2(pipefd, O_CLOEXEC) != 0) return NULL;
 
-	if (_popen_noshell_fork_mode) { // use fork()
+	if (_popen_noshell_fork_mode == POPEN_NOSHELL_MODE_FORK) { // use fork()
 
 		pid = fork();
 		if (pid == -1) return NULL;
@@ -344,6 +421,14 @@ FILE *popen_noshell(const char *file, const char * const *argv, const char *type
 			_popen_noshell_child_process(NULL, pipefd[0], pipefd[1], read_pipe, stderr_mode, file, argv);
 			errx(EXIT_FAILURE, "This must never happen");
 		} // child life ends here, for sure
+
+	} else if (_popen_noshell_fork_mode == POPEN_NOSHELL_MODE_POSIX_SPAWN) { // use posix_spawn()
+
+		pid = _popen_noshell_child_process(NULL, pipefd[0], pipefd[1], read_pipe, stderr_mode, file, argv);
+		if (pid == 0) {
+			warnx("posix_spawn() failed");
+			return NULL;
+		}
 
 	} else { // use clone()
 

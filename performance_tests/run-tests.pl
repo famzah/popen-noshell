@@ -19,8 +19,8 @@ use warnings;
 
 use Data::Dumper;
 
-my $count = 10000;
-my $memsize = 20;
+my $count = 60000;
+my $memsize = 200;
 my $ratio = 2;
 my $allowed_deviation = 20; # +/- percent
 my $repeat_tests = 3;
