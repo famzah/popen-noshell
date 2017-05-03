@@ -330,7 +330,7 @@ void issue_8_stderr_mode_test_invalid_mode() {
 	
 	/* parent continues here */
 
-	ret = waitpid(pid, &status, 0);
+	ret = waitpid(pid, &status, __WALL);
 	if (ret != pid) {
 		errx(EXIT_FAILURE, "waitpid() failed");
 	}

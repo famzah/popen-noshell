@@ -352,7 +352,7 @@ pid_t popen_noshell_vmfork(int (*fn)(void *), void *arg, void **memory_to_free_o
 		 */
 		
 #ifndef POPEN_NOSHELL_VALGRIND_DEBUG
-		pid = clone(fn, stack_aligned, CLONE_VM | SIGCHLD | CLONE_VFORK, arg);
+		pid = clone(fn, stack_aligned, CLONE_VM | CLONE_VFORK, arg);
 #else
 		pid = fork(); // Valgrind does not support arbitrary clone() calls, so we use fork for the tests
 #endif
@@ -649,7 +649,7 @@ int pclose_noshell(struct popen_noshell_pass_to_pclose *arg) {
 		return -1;
 	}
 
-	if (waitpid(arg->pid, &status, 0) != arg->pid) {
+	if (waitpid(arg->pid, &status, __WALL) != arg->pid) {
 		return -1;
 	}
 
