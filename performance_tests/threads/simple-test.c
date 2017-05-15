@@ -70,8 +70,7 @@ int main() {
 		err(EXIT_FAILURE, "signal()");
 	}
 
-	//for (i = 0; i < 100000; ++i) {
-	for (i = 0; i < 1; ++i) {
+	for (i = 0; i < 100000; ++i) {
 		do_vfork_in_thread();
 	}
 
