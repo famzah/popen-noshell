@@ -166,6 +166,8 @@ void _popen_noshell_child_process_cleanup_fail_and_exit(int exit_code, struct po
 		/* free this copied memory; if it was not Valgrind, this memory would have been shared and would belong to the parent! */
 		_pclose_noshell_free_clone_arg_memory(arg_ptr);
 	}
+#else
+	(void) arg_ptr;
 #endif
 
 	if (fflush(stdout) != 0) _ERR(255, "fflush(stdout)");

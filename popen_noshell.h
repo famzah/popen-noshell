@@ -23,6 +23,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* stack for the child process before it does exec() */
 #define POPEN_NOSHELL_STACK_SIZE 8*1024*1024 /* currently most Linux distros set this to 8 MBytes */
 
@@ -67,5 +71,9 @@ pid_t popen_noshell_vmfork(int (*fn)(void *), void *arg, void **memory_to_free_o
 /* used only for benchmarking purposes */
 void popen_noshell_set_fork_mode(int mode);
 int popen_noshell_get_fork_mode();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
