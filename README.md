@@ -1,4 +1,4 @@
-Our tests show that fork() calls on 2.6.x Linux get slower as the parent process uses more memory. So do popen() and system().
+Tests show that fork() calls on Linux get slower as the parent process uses more memory. So do popen() and system().
 
 This project is a much faster and more secure re-implementation of the Libc popen() and system() calls for Linux. The functions of this library can be used in currently existing source code which uses the standard popen() and system() functions. Small code modifications are required.
 
