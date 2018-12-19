@@ -1,0 +1,294 @@
+ii  libc6:amd64                                2.27-3ubuntu1                                amd64        GNU C Library: Shared libraries
+ii  gcc-7                                      7.3.0-27ubuntu1~18.04                        amd64        GNU C compiler
+ii  linux-image-4.15.0-42-generic              4.15.0-42.45                                 amd64        Signed kernel image generic
+
+--------------------------------------------------------------------------------
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=0
+fork-performance: fork() + exec(), standard Libc
+40.58user 43.61system 1:26.81elapsed 96%CPU (0avgtext+0avgdata 104056maxresident)k
+0inputs+0outputs (0major+639425minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=0
+fork-performance: fork() + exec(), standard Libc
+40.49user 43.74system 1:26.88elapsed 96%CPU (0avgtext+0avgdata 103996maxresident)k
+0inputs+0outputs (0major+639523minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=0
+fork-performance: fork() + exec(), standard Libc
+40.54user 43.98system 1:27.09elapsed 97%CPU (0avgtext+0avgdata 104016maxresident)k
+0inputs+0outputs (0major+639545minor)pagefaults 0swaps
+
+--------------------------------------------------------------------------------
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=1
+fork-performance: vfork() + exec(), standard Libc
+7.35user 1.57system 0:08.94elapsed 99%CPU (0avgtext+0avgdata 104056maxresident)k
+0inputs+0outputs (0major+219701minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=1
+fork-performance: vfork() + exec(), standard Libc
+7.34user 1.68system 0:09.04elapsed 99%CPU (0avgtext+0avgdata 104048maxresident)k
+0inputs+0outputs (0major+219384minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=1
+fork-performance: vfork() + exec(), standard Libc
+7.47user 1.62system 0:09.08elapsed 100%CPU (0avgtext+0avgdata 104076maxresident)k
+0inputs+0outputs (0major+219469minor)pagefaults 0swaps
+
+--------------------------------------------------------------------------------
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=2
+fork-performance: system(), standard Libc
+67.02user 48.31system 1:59.80elapsed 96%CPU (0avgtext+0avgdata 104164maxresident)k
+0inputs+0outputs (0major+5381180minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=2
+fork-performance: system(), standard Libc
+67.49user 47.72system 1:59.71elapsed 96%CPU (0avgtext+0avgdata 104020maxresident)k
+0inputs+0outputs (0major+5380597minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=2
+fork-performance: system(), standard Libc
+67.23user 48.26system 2:00.00elapsed 96%CPU (0avgtext+0avgdata 104120maxresident)k
+0inputs+0outputs (0major+5380929minor)pagefaults 0swaps
+
+--------------------------------------------------------------------------------
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=3
+fork-performance: popen(), standard Libc
+69.51user 47.86system 2:00.89elapsed 97%CPU (0avgtext+0avgdata 104076maxresident)k
+0inputs+0outputs (0major+5857053minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=3
+fork-performance: popen(), standard Libc
+71.00user 46.56system 2:01.09elapsed 97%CPU (0avgtext+0avgdata 104068maxresident)k
+0inputs+0outputs (0major+5917164minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=3
+fork-performance: popen(), standard Libc
+70.61user 46.87system 2:00.98elapsed 97%CPU (0avgtext+0avgdata 104120maxresident)k
+0inputs+0outputs (0major+5916653minor)pagefaults 0swaps
+
+--------------------------------------------------------------------------------
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=4
+fork-performance: the new noshell, debug fork(), compat=0
+41.71user 44.96system 1:27.82elapsed 98%CPU (0avgtext+0avgdata 104124maxresident)k
+0inputs+0outputs (0major+1239559minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=4
+fork-performance: the new noshell, debug fork(), compat=0
+41.47user 45.49system 1:28.24elapsed 98%CPU (0avgtext+0avgdata 104080maxresident)k
+0inputs+0outputs (0major+1299456minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=4
+fork-performance: the new noshell, debug fork(), compat=0
+41.66user 45.46system 1:28.32elapsed 98%CPU (0avgtext+0avgdata 104080maxresident)k
+0inputs+0outputs (0major+1419416minor)pagefaults 0swaps
+
+--------------------------------------------------------------------------------
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=5
+fork-performance: the new noshell, default clone(), compat=0
+7.61user 2.03system 0:08.85elapsed 108%CPU (0avgtext+0avgdata 104132maxresident)k
+0inputs+0outputs (0major+279381minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=5
+fork-performance: the new noshell, default clone(), compat=0
+7.70user 2.09system 0:08.99elapsed 109%CPU (0avgtext+0avgdata 104156maxresident)k
+0inputs+0outputs (0major+279355minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=5
+fork-performance: the new noshell, default clone(), compat=0
+8.12user 2.01system 0:09.46elapsed 107%CPU (0avgtext+0avgdata 104156maxresident)k
+0inputs+0outputs (0major+279578minor)pagefaults 0swaps
+
+--------------------------------------------------------------------------------
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=6
+fork-performance: the new noshell, debug fork(), compat=1
+41.63user 45.23system 1:28.18elapsed 98%CPU (0avgtext+0avgdata 104148maxresident)k
+0inputs+0outputs (0major+1299402minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=6
+fork-performance: the new noshell, debug fork(), compat=1
+41.57user 45.20system 1:28.06elapsed 98%CPU (0avgtext+0avgdata 104068maxresident)k
+0inputs+0outputs (0major+1239632minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=6
+fork-performance: the new noshell, debug fork(), compat=1
+41.63user 45.01system 1:27.95elapsed 98%CPU (0avgtext+0avgdata 104124maxresident)k
+0inputs+0outputs (0major+1239395minor)pagefaults 0swaps
+
+--------------------------------------------------------------------------------
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=7
+fork-performance: the new noshell, default clone(), compat=1
+7.76user 2.10system 0:09.00elapsed 109%CPU (0avgtext+0avgdata 104132maxresident)k
+0inputs+0outputs (0major+279441minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=7
+fork-performance: the new noshell, default clone(), compat=1
+7.68user 2.03system 0:08.85elapsed 109%CPU (0avgtext+0avgdata 104096maxresident)k
+0inputs+0outputs (0major+279328minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=7
+fork-performance: the new noshell, default clone(), compat=1
+7.56user 2.07system 0:08.79elapsed 109%CPU (0avgtext+0avgdata 104132maxresident)k
+0inputs+0outputs (0major+279421minor)pagefaults 0swaps
+
+--------------------------------------------------------------------------------
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=8
+fork-performance: the new noshell, posix_spawn(), compat=0
+9.53user 2.74system 0:11.28elapsed 108%CPU (0avgtext+0avgdata 104176maxresident)k
+0inputs+0outputs (0major+339488minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=8
+fork-performance: the new noshell, posix_spawn(), compat=0
+9.70user 2.72system 0:11.29elapsed 109%CPU (0avgtext+0avgdata 104128maxresident)k
+0inputs+0outputs (0major+339561minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=8
+fork-performance: the new noshell, posix_spawn(), compat=0
+9.45user 2.66system 0:10.97elapsed 110%CPU (0avgtext+0avgdata 104092maxresident)k
+0inputs+0outputs (0major+339497minor)pagefaults 0swaps
+
+--------------------------------------------------------------------------------
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=9
+fork-performance: the new noshell, posix_spawn(), compat=1
+9.62user 2.66system 0:11.06elapsed 111%CPU (0avgtext+0avgdata 104064maxresident)k
+0inputs+0outputs (0major+339564minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=9
+fork-performance: the new noshell, posix_spawn(), compat=1
+9.87user 2.73system 0:11.73elapsed 107%CPU (0avgtext+0avgdata 104116maxresident)k
+0inputs+0outputs (0major+339574minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=9
+fork-performance: the new noshell, posix_spawn(), compat=1
+9.37user 2.77system 0:10.99elapsed 110%CPU (0avgtext+0avgdata 104068maxresident)k
+0inputs+0outputs (0major+339575minor)pagefaults 0swaps
+
+--------------------------------------------------------------------------------
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=10
+fork-performance: posix_spawn() + exec() no pipes, standard Libc
+9.82user 1.97system 0:11.42elapsed 103%CPU (0avgtext+0avgdata 104000maxresident)k
+0inputs+0outputs (0major+279418minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=10
+fork-performance: posix_spawn() + exec() no pipes, standard Libc
+9.00user 2.07system 0:10.47elapsed 105%CPU (0avgtext+0avgdata 104024maxresident)k
+0inputs+0outputs (0major+279398minor)pagefaults 0swaps
+
+fork-performance: Test options: count=60000, memsize=200, ratio=2, mode=10
+fork-performance: posix_spawn() + exec() no pipes, standard Libc
+9.40user 2.07system 0:10.98elapsed 104%CPU (0avgtext+0avgdata 104060maxresident)k
+0inputs+0outputs (0major+279434minor)pagefaults 0swaps
+
+
+
+--------------------------------------------------------------------------------
+RAW PERFORMANCE TESTS RESULTS
+--------------------------------------------------------------------------------
+the new noshell, default clone(), compat=1 | avg_user_t | 7.67 | avg_sys_t | 2.07 | total_t | 9.74
+        user_t: 7.76 (   1%)
+        sys_t : 2.10 (   1%)
+        user_t: 7.68 (   0%)
+        sys_t : 2.03 (  -2%)
+        user_t: 7.56 (  -1%)
+        sys_t : 2.07 (   0%)
+the new noshell, debug fork(), compat=1 | avg_user_t | 41.61 | avg_sys_t | 45.15 | total_t | 86.76
+        user_t: 41.63 (   0%)
+        sys_t : 45.23 (   0%)
+        user_t: 41.57 (  -0%)
+        sys_t : 45.20 (   0%)
+        user_t: 41.63 (   0%)
+        sys_t : 45.01 (  -0%)
+the new noshell, posix_spawn(), compat=0 | avg_user_t | 9.56 | avg_sys_t | 2.71 | total_t | 12.27
+        user_t: 9.53 (  -0%)
+        sys_t : 2.74 (   1%)
+        user_t: 9.70 (   1%)
+        sys_t : 2.72 (   0%)
+        user_t: 9.45 (  -1%)
+        sys_t : 2.66 (  -2%)
+system(), standard Libc | avg_user_t | 67.25 | avg_sys_t | 48.10 | total_t | 115.35
+        user_t: 67.02 (  -0%)
+        sys_t : 48.31 (   0%)
+        user_t: 67.49 (   0%)
+        sys_t : 47.72 (  -1%)
+        user_t: 67.23 (  -0%)
+        sys_t : 48.26 (   0%)
+the new noshell, posix_spawn(), compat=1 | avg_user_t | 9.62 | avg_sys_t | 2.72 | total_t | 12.34
+        user_t: 9.62 (   0%)
+        sys_t : 2.66 (  -2%)
+        user_t: 9.87 (   3%)
+        sys_t : 2.73 (   0%)
+        user_t: 9.37 (  -3%)
+        sys_t : 2.77 (   2%)
+vfork() + exec(), standard Libc | avg_user_t | 7.39 | avg_sys_t | 1.62 | total_t | 9.01
+        user_t: 7.35 (  -1%)
+        sys_t : 1.57 (  -3%)
+        user_t: 7.34 (  -1%)
+        sys_t : 1.68 (   4%)
+        user_t: 7.47 (   1%)
+        sys_t : 1.62 (   0%)
+posix_spawn() + exec() no pipes, standard Libc | avg_user_t | 9.41 | avg_sys_t | 2.04 | total_t | 11.45
+        user_t: 9.82 (   4%)
+        sys_t : 1.97 (  -3%)
+        user_t: 9.00 (  -4%)
+        sys_t : 2.07 (   1%)
+        user_t: 9.40 (  -0%)
+        sys_t : 2.07 (   1%)
+popen(), standard Libc | avg_user_t | 70.37 | avg_sys_t | 47.10 | total_t | 117.47
+        user_t: 69.51 (  -1%)
+        sys_t : 47.86 (   2%)
+        user_t: 71.00 (   1%)
+        sys_t : 46.56 (  -1%)
+        user_t: 70.61 (   0%)
+        sys_t : 46.87 (  -0%)
+the new noshell, debug fork(), compat=0 | avg_user_t | 41.61 | avg_sys_t | 45.30 | total_t | 86.91
+        user_t: 41.71 (   0%)
+        sys_t : 44.96 (  -1%)
+        user_t: 41.47 (  -0%)
+        sys_t : 45.49 (   0%)
+        user_t: 41.66 (   0%)
+        sys_t : 45.46 (   0%)
+the new noshell, default clone(), compat=0 | avg_user_t | 7.81 | avg_sys_t | 2.04 | total_t | 9.85
+        user_t: 7.61 (  -3%)
+        sys_t : 2.03 (  -0%)
+        user_t: 7.70 (  -1%)
+        sys_t : 2.09 (   2%)
+        user_t: 8.12 (   4%)
+        sys_t : 2.01 (  -1%)
+fork() + exec(), standard Libc | avg_user_t | 40.54 | avg_sys_t | 43.78 | total_t | 84.32
+        user_t: 40.58 (   0%)
+        sys_t : 43.61 (  -0%)
+        user_t: 40.49 (  -0%)
+        sys_t : 43.74 (  -0%)
+        user_t: 40.54 (   0%)
+        sys_t : 43.98 (   0%)
+
+
+--------------------------------------------------------------------------------
+PERFORMANCE TESTS REPORT
+--------------------------------------------------------------------------------
+System and setup:
+         | Linux 4.15.0-42-generic x86_64
+         | count=60000, memsize=200, ratio=2
+Here is the data for the graphs:
+         | the new noshell, default clone(), compat=1 | avg_user_t | 7.67 | avg_sys_t | 2.07 | total_t | 9.74
+         | the new noshell, debug fork(), compat=1 | avg_user_t | 41.61 | avg_sys_t | 45.15 | total_t | 86.76
+         | the new noshell, posix_spawn(), compat=0 | avg_user_t | 9.56 | avg_sys_t | 2.71 | total_t | 12.27
+         | system(), standard Libc | avg_user_t | 67.25 | avg_sys_t | 48.10 | total_t | 115.35
+         | the new noshell, posix_spawn(), compat=1 | avg_user_t | 9.62 | avg_sys_t | 2.72 | total_t | 12.34
+         | vfork() + exec(), standard Libc | avg_user_t | 7.39 | avg_sys_t | 1.62 | total_t | 9.01
+         | posix_spawn() + exec() no pipes, standard Libc | avg_user_t | 9.41 | avg_sys_t | 2.04 | total_t | 11.45
+         | popen(), standard Libc | avg_user_t | 70.37 | avg_sys_t | 47.10 | total_t | 117.47
+         | the new noshell, debug fork(), compat=0 | avg_user_t | 41.61 | avg_sys_t | 45.30 | total_t | 86.91
+         | the new noshell, default clone(), compat=0 | avg_user_t | 7.81 | avg_sys_t | 2.04 | total_t | 9.85
+         | fork() + exec(), standard Libc | avg_user_t | 40.54 | avg_sys_t | 43.78 | total_t | 84.32
+--------------------------------------------------------------------------------
