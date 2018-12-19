@@ -53,7 +53,7 @@ if ($repeat_tests < 2) {
 
 $options = undef;
 print "The tests are being performed, this will take some time...\n\n";
-for $mode (0..7) {
+for $mode (0..10) {
 	print(('-'x80)."\n\n");
 	for (1..$repeat_tests) {
 		$s = `gcc -Wall fork-performance.c popen_noshell.c -o fork-performance && time ./fork-performance --count=$count --memsize=$memsize --ratio=$ratio --mode=$mode 2>&1 >/dev/null`;
