@@ -1,6 +1,6 @@
 Tests show that fork() calls on Linux get slower as the parent process uses more memory. So do popen() and system().
 
-Update: If you have glibc 2.24 (2016-08-05) or newer, you should use [posix_spawn()](https://linux.die.net/man/3/posix_spawn) instead which is a standard glibc function featuring similar [performance results](https://blog.famzah.net/2018/12/19/posix_spawn-performance-benchmarks-and-usage-examples/).
+**Update**: If you have glibc 2.24 (2016-08-05) or newer, you should use [posix_spawn()](https://linux.die.net/man/3/posix_spawn) instead which is a standard glibc function featuring similar [performance results](https://blog.famzah.net/2018/12/19/posix_spawn-performance-benchmarks-and-usage-examples/). You can also take a look at the [aspawn](https://github.com/NobodyXu/aspawn) project which demonstrates even better performance and is more flexible than posix_spawn().
 
 This project is a much faster and more secure re-implementation of the Libc popen() and system() calls for Linux. The functions of this library can be used in currently existing source code which uses the standard popen() and system() functions. Small code modifications are required.
 
